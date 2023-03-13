@@ -50,7 +50,8 @@ chains = [chain1, chain2, chain3, chain4]
 -- Compute the length of a 'Chain'.
 
 lengthChain :: Chain txs -> Int
-lengthChain = error "TODO: implement lengthChain"
+lengthChain GenesisBlock = 0
+lengthChain (Block chain _) = 1 + lengthChain chain 
 
 propLengthChain1 :: Bool
 propLengthChain1 = lengthChain chain1 == 1
@@ -74,7 +75,8 @@ propLengthChain5 =
 -- Sum all entries in an integer chain.
 
 sumChain :: Chain Int -> Int
-sumChain = error "TODO: implement sumChain"
+sumChain GenesisBlock = 0
+sumChain (Block chain txn) = txn + sumChain chain 
 
 propSumChain1 :: Bool
 propSumChain1 = sumChain chain1 == 2
@@ -101,7 +103,10 @@ propSumChain5 =
 -- of an empty chain is 0.
 
 maxChain :: Chain Int -> Int
-maxChain = error "TODO: implement maxChain"
+maxChain GenesisBlock = 0
+maxChain (Block chain txn)
+    | txn > maxChain chain = txn
+    | otherwise = maxChain chain
 
 propMaxChain :: Bool
 propMaxChain =
@@ -114,7 +119,9 @@ propMaxChain =
 -- the first.
 
 longerChain :: Chain txs -> Chain txs -> Chain txs
-longerChain = error "TODO: implement longerChain"
+longerChain chain1 chain2
+    | lengthChain chain1 > lengthChain chain2 = chain1
+    | otherwise = chain2
 
 propLongerChain1 :: Bool
 propLongerChain1 = longerChain chain1 chain2 == chain2
@@ -143,8 +150,12 @@ propLongerChain5 = and [ propLongerChain1
 -- are positive.) Check that a given chain is valid.
 
 validChain :: Chain Int -> Bool
-validChain = error "TODO: implement validChain"
-
+validChain GenesisBlock = True
+validChain (Block chain txn)
+    | txn < (prevTxn chain) = validChain chain
+    | otherwise = False
+        where prevTxn = (\block -> case block of -> GenesisBlock = 0 
+                                                 -> (Block ch tx) = tx)
 propValidChain1 :: Bool
 propValidChain1 = validChain GenesisBlock
 
