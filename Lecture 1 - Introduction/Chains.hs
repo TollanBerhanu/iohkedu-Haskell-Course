@@ -313,7 +313,9 @@ propHasBlock2 = not (hasBlock 8 chain5)
 
 uniqueBlocks :: Eq txs => Chain txs -> Bool
 uniqueBlocks GenesisBlock = True
-uniqueBlocks (Block chain txn) = txn ==  
+uniqueBlocks (Block chain txn)
+    | hasBlock txn chain = False
+    | otherwise = uniqueBlocks chain
 
 propUniqueBlocks1 :: Bool
 propUniqueBlocks1 = uniqueBlocks (GenesisBlock :: Chain Int)
@@ -333,7 +335,8 @@ propUniqueBlocks4 = not (uniqueBlocks (Block chain2 2))
 -- a particular property.
 
 allBlockProp :: (txs -> Bool) -> Chain txs -> Bool
-allBlockProp = error "TODO: implement allBlockProp"
+allBlockProp _ GenesisBlock = True
+allBlockProp condition (Block chain txn) = condition txn && (allBlockProp condition chain)
 
 propAllBlockProp1 :: Bool
 propAllBlockProp1 = allBlockProp (== 'x') GenesisBlock
@@ -350,7 +353,8 @@ propAllBlockProp3 = not (allBlockProp even chain3)
 -- If the given list is empty, return 0.
 
 maxChains :: [Chain txs] -> Int
-maxChains = error "TODO: implement maxChains"
+maxChains [] = 0
+maxChains (chain:chains) = max (lengthChain chain) (maxChains chains)
 
 propMaxChains1 :: Bool
 propMaxChains1 = maxChains [] == 0
@@ -365,7 +369,8 @@ propMaxChains2 = maxChains [chain1, chain2, chain3] == 3
 -- element plus a normal list.
 
 longestCommonPrefix :: Eq txs => Chain txs -> [Chain txs] -> Chain txs
-longestCommonPrefix = error "TODO: implement longestCommonPrefix"
+longestCommonPrefix chain [] = chain
+longestCommonPrefix chain1 (chain2:chains) = commonPrefix chain1 (longestCommonPrefix chain2 chains)
 
 propLongestCommonPrefix1 :: Bool
 propLongestCommonPrefix1 = longestCommonPrefix chain4 [] == chain4
@@ -387,7 +392,8 @@ propLongestCommonPrefix3 = longestCommonPrefix chain6 [chain5, chain5] == chain5
 -- the original chain at that point.
 
 balancesChain :: Chain Int -> Chain Int
-balancesChain = error "TODO: implement balancedChain"
+balancesChain GenesisBlock = GenesisBlock
+balancesChain (Block chain txn) = balancesChain chain |> (txn + sumChain chain)
 
 propBalancesChain1 :: Bool
 propBalancesChain1 =
@@ -435,7 +441,7 @@ propBalancesChain7 = and [ propBalancesChain1
 -- intermediate balances are negative.
 
 validBalancesChain :: Chain Int -> Bool
-validBalancesChain = error "TODO: implement validBalancesChain"
+validBalancesChain chain = not $ hasBlockProp (<0) (balancesChain chain) 
 
 propValidBalancesChain1 :: Bool
 propValidBalancesChain1 =
@@ -457,7 +463,10 @@ propValidBalancesChain3 = and [ propValidBalancesChain1
 -- Return the rest.
 
 shortenWhile :: (txs -> Bool) -> Chain txs -> Chain txs
-shortenWhile = error "TODO: implement shortenWhile"
+shortenWhile _ GenesisBlock = GenesisBlock
+shortenWhile condition (Block chain txn)
+    | condition txn = shortenWhile condition chain
+    | otherwise = (Block chain txn)
 
 propShortenWhile1 :: Bool
 propShortenWhile1 = shortenWhile even chain2 == GenesisBlock
@@ -470,7 +479,9 @@ propShortenWhile2 = shortenWhile (> 3) chain2 == chain1
 -- Reimplement the function 'build' from the slides.
 
 build :: Int -> Chain Int
-build = error "TODO: implement build"
+build size
+    | size < 1 = GenesisBlock
+    | otherwise = Block (build (size-1)) size
 
 propBuild1 :: Bool
 propBuild1 = lengthChain (build 1000) == 1000
@@ -490,7 +501,9 @@ propBuild3 = build 3 == GenesisBlock |> 1 |> 2 |> 3
 -- genesis block.
 
 replicateChain :: Int -> txs -> Chain txs
-replicateChain = error "TODO: implement replicateChain"
+replicateChain len txn
+    | len < 1 = GenesisBlock
+    | otherwise = Block (replicateChain (len-1) txn) txn
 
 propReplicateChain1 :: Bool
 propReplicateChain1 = replicateChain (-7) 'x' == GenesisBlock
@@ -509,7 +522,11 @@ propReplicateChain3 = replicateChain 3 'x' == GenesisBlock |> 'x' |> 'x' |> 'x'
 -- return the genesis block only.
 
 cutPrefix :: Int -> Chain txs -> Chain txs
-cutPrefix = error "TODO: implement cutPrefix"
+cutPrefix _ GenesisBlock = GenesisBlock
+cutPrefix len chain
+    | len < 1 = GenesisBlock
+    | len >= lengthChain chain = chain
+    | otherwise = cutPrefix len $ (\(Block ch _) -> ch) chain
 
 propCutPrefix1 :: Bool
 propCutPrefix1 = cutPrefix 1 chain2 == chain1
