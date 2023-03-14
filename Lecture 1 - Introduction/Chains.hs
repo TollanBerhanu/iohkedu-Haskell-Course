@@ -152,10 +152,11 @@ propLongerChain5 = and [ propLongerChain1
 validChain :: Chain Int -> Bool
 validChain GenesisBlock = True
 validChain (Block chain txn)
-    | txn < (prevTxn chain) = validChain chain
+    | txn > (prevTxn chain) = validChain chain
     | otherwise = False
-        where prevTxn = (\block -> case block of -> GenesisBlock = 0 
-                                                 -> (Block ch tx) = tx)
+        where 
+            prevTxn GenesisBlock = 0
+            prevTxn (Block _ tx) = tx
 propValidChain1 :: Bool
 propValidChain1 = validChain GenesisBlock
 
@@ -176,7 +177,12 @@ propValidChain2 =
 -- to task 9.
 
 isPrefixOf :: Eq txs => Chain txs -> Chain txs -> Bool
-isPrefixOf = error "TODO: implement isPrefixOf"
+isPrefixOf GenesisBlock _ = True
+isPrefixOf block GenesisBlock = block == GenesisBlock
+isPrefixOf chain1 chain2
+    | lengthChain chain1 > lengthChain chain2 = False
+    | lengthChain chain1 == lengthChain chain2 = chain1 == chain2
+    | otherwise = isPrefixOf chain1 $ (\(Block ch _) -> ch) chain2
 
 propIsPrefixOf1 :: Bool
 propIsPrefixOf1 = isPrefixOf chain1 chain2
@@ -209,7 +215,7 @@ propIsPrefixOf6 = and [ propIsPrefixOf1
 -- other.
 
 areCompatible :: Eq txs => Chain txs -> Chain txs -> Bool
-areCompatible = error "TODO: implement areCompatible"
+areCompatible chain1 chain2 = chain1 `isPrefixOf` chain2 || chain2 `isPrefixOf` chain1
 
 propAreCompatible1 :: Bool
 propAreCompatible1 = areCompatible chain1 chain2
@@ -247,7 +253,13 @@ propAreCompatible7 = and [ propAreCompatible1
 -- Given two chains, find the longest common prefix.
 
 commonPrefix :: Eq txs => Chain txs -> Chain txs -> Chain txs
-commonPrefix = error "TODO: implement commonPrefix"
+commonPrefix chain1 chain2
+    | shortchain `isPrefixOf` longchain = shortchain
+    | otherwise = commonPrefix longchain $ (\(Block ch _) -> ch) shortchain
+    where longchain = longerChain chain1 chain2
+          shortchain
+            | longchain == chain1 = chain2
+            | otherwise = chain1
 
 propCommonPrefix1 :: Bool
 propCommonPrefix1 = commonPrefix chain1 chain2 == chain1
@@ -272,7 +284,8 @@ propCommonPrefix5 =
 -- in the type of transactions.
 
 hasBlockProp :: (txs -> Bool) -> Chain txs -> Bool
-hasBlockProp = error "TODO: implement hasBlockProp"
+hasBlockProp _ GenesisBlock = False
+hasBlockProp condition (Block chain txn) = (condition txn) || (hasBlockProp condition chain) 
 
 propHasBlockProp1 :: Bool
 propHasBlockProp1 = hasBlockProp even chain3
@@ -285,7 +298,7 @@ propHasBlockProp2 = not (hasBlockProp odd chain2)
 -- Reimplement hasBlock in terms of hasBlockProp.
 
 hasBlock :: Eq txs => txs -> Chain txs -> Bool
-hasBlock = error "TODO: implement hasBlock"
+hasBlock txn chain = hasBlockProp (== txn) chain
 
 propHasBlock1 :: Bool
 propHasBlock1 = hasBlock 8 chain4
@@ -299,7 +312,8 @@ propHasBlock2 = not (hasBlock 8 chain5)
 -- i.e., different from each other.
 
 uniqueBlocks :: Eq txs => Chain txs -> Bool
-uniqueBlocks = error "TODO: implement uniqueBlocks"
+uniqueBlocks GenesisBlock = True
+uniqueBlocks (Block chain txn) = txn ==  
 
 propUniqueBlocks1 :: Bool
 propUniqueBlocks1 = uniqueBlocks (GenesisBlock :: Chain Int)
