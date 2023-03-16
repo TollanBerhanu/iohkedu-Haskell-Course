@@ -5,6 +5,8 @@ module Datatypes where
 import Prelude hiding ((++), or, reverse, filter)
 import Control.Applicative ((<|>), liftA2)
 
+import System.CPUTime
+
 -- Task Datatypes-1.
 --
 -- Define logical implication, which is given
@@ -26,7 +28,8 @@ import Control.Applicative ((<|>), liftA2)
 -- False
 --
 implies :: Bool -> Bool -> Bool
-implies = error "TODO: define implies"
+implies True False = False
+implies _ _ = True 
 
 -- Task Datatypes-2.
 --
@@ -34,7 +37,7 @@ implies = error "TODO: define implies"
 -- of 'not' and '||', both of which are predefined.
 
 implies' :: Bool -> Bool -> Bool
-implies' = error "TODO: define implies'"
+implies' premise conclusion = not premise || conclusion 
 
 -- Task Datatypes-3.
 --
@@ -47,7 +50,8 @@ implies' = error "TODO: define implies'"
 -- Just 2
 --
 orelse :: Maybe a -> Maybe a -> Maybe a
-orelse = error "TODO: define orelse"
+orelse Nothing just = just
+orelse just _ = just 
 
 -- Task Datatypes-4.
 --
@@ -58,7 +62,8 @@ orelse = error "TODO: define orelse"
 -- Just 8
 --
 mapMaybe :: (a -> b) -> Maybe a -> Maybe b
-mapMaybe = error "TODO: define mapMaybe"
+mapMaybe f Nothing = Nothing
+mapMaybe f (Just x) = Just (f x)
 
 -- Task Datatypes-5.
 --
@@ -93,7 +98,9 @@ mapMaybe = error "TODO: define mapMaybe"
 -- Nothing
 --
 pairMaybe :: Maybe a -> Maybe b -> Maybe (a, b)
-pairMaybe = error "TODO: define pairMaybe"
+pairMaybe Nothing _ = Nothing
+pairMaybe _ Nothing = Nothing
+pairMaybe (Just x) (Just y) = Just (x,y)
 
 -- Task Datatypes-8.
 --
@@ -107,14 +114,16 @@ pairMaybe = error "TODO: define pairMaybe"
 -- Nothing
 --
 liftMaybe :: (a -> b -> c) -> Maybe a -> Maybe b -> Maybe c
-liftMaybe = error "TODO: define liftMaybe"
+liftMaybe _ Nothing _ = Nothing 
+liftMaybe _ _ Nothing = Nothing 
+liftMaybe f (Just x) (Just y) = Just (f x y)
 
 -- Task Datatypes-9.
 --
 -- Reimplement 'pairMaybe' using 'liftMaybe'.
 
 pairMaybe' :: Maybe a -> Maybe b -> Maybe (a, b)
-pairMaybe' = error "TODO: define pairMaybe'"
+pairMaybe' = liftMaybe (\x y -> (x,y))
 
 -- Task Datatypes-10.
 --
@@ -129,7 +138,8 @@ pairMaybe' = error "TODO: define pairMaybe'"
 -- Nothing
 --
 addMaybes :: Maybe Int -> Maybe Int -> Maybe Int
-addMaybes = error "TODO: define addMaybes"
+addMaybes = liftMaybe (\x y -> x + y)
+-- addMaybes = liftA2 (\x y -> x + y)
 
 -- Task Datatypes-11.
 --
@@ -147,7 +157,8 @@ addMaybes = error "TODO: define addMaybes"
 -- 'mapMaybe'.
 
 addMaybes' :: Maybe Int -> Maybe Int -> Maybe Int
-addMaybes' = error "TODO: define addMaybes'"
+addMaybes' a b = mapMaybe (\(x,y) -> x+y) (pairMaybe a b)
+-- addMaybes' a b = mapMaybe (uncurry (+)) (pairMaybe a b)
 
 -- Task Datatypes-13.
 --
@@ -169,7 +180,7 @@ addMaybes' = error "TODO: define addMaybes'"
 -- (8,14)
 --
 split :: (a -> b) -> (a -> c) -> a -> (b, c)
-split = error "TODO: define split"
+split fa fb x = (fa x, fb x) 
 
 -- Task Datatypes-15.
 --
@@ -183,7 +194,7 @@ split = error "TODO: define split"
 -- "MongoliaHaskell"
 --
 (++) :: [a] -> [a] -> [a]
-(++) = error "TODO: define (++)"
+(++) x y = concat [x,y] -- haven't seen slides yet :D
 
 -- Task Datatypes-16.
 --
@@ -199,14 +210,18 @@ split = error "TODO: define split"
 -- True
 --
 or :: [Bool] -> Bool
-or = error "TODO: define or"
+or [] = False
+or (x:xs)
+  | x = True
+  | otherwise = or xs
 
 -- Task Datatypes-17.
 --
 -- Reimplement the function 'reverse' from the slides.
 
 reverse :: [a] -> [a]
-reverse = error "TODO: define reverse"
+reverse [] = []
+reverse (x:xs) = (reverse xs) ++ [x]
 
 -- Task Datatypes-18.
 --
@@ -224,8 +239,7 @@ reverse = error "TODO: define reverse"
 -- "lleksaHMongolia"
 --
 reverseAcc :: [a] -> [a] -> [a]
-reverseAcc = error "TODO: define reverseAcc"
-
+reverseAcc accm = foldl (\acc x -> x:acc) accm 
 -- Task Datatypes-19.
 --
 -- One way to look at the previous task is that the first
@@ -251,6 +265,21 @@ reverse' = reverseAcc []
 -- Do you observe one of the two versions to be faster
 -- than the other?
 
+time :: IO ()
+time = do
+    start <- getCPUTime
+    let !reverseLength1 = length $ reverse [1..10000]
+    end   <- getCPUTime
+    let diff1 = (fromIntegral (end - start)) / (10^12)
+
+    start <- getCPUTime
+    let !reverseLength2 = length $ reverse' [1..10000]
+    end   <- getCPUTime
+    let diff2 = (fromIntegral (end - start)) / (10^12)
+    putStrLn $ "Computation time for reverse: " ++ (show diff1) --  1.4375
+    putStrLn $ "Computation time for reverse': " ++ (show diff2) -- 1.5625e-2
+
+
 -- Task Datatypes-21.
 --
 -- Reimplement 'filter' from the slides.
@@ -260,7 +289,9 @@ reverse' = reverseAcc []
 -- [2,4,6]
 --
 filter :: (a -> Bool) -> [a] -> [a]
-filter = error "TODO: define filter"
+filter _ [] = []
+filter f (x:xs) = if f x then x:rest else rest
+    where rest = filter f xs
 
 -- Task Datatypes-22.
 --
@@ -278,7 +309,7 @@ filter = error "TODO: define filter"
 -- [1,2,3,4,6,8,12,24]
 --
 divisors :: Integral a => a -> [a]
-divisors = error "TODO: define divisors"
+divisors n = filter (\x -> n `mod` x == 0) [1..n]
 
 -- Task Datatypes-23.
 --
@@ -316,7 +347,7 @@ divisors = error "TODO: define divisors"
 -- True
 --
 isPrime :: Integral a => a -> Bool
-isPrime = error "TODO: define isPrime"
+isPrime n = divisors n == [1,n] 
 
 -- Task Datatypes-25.
 --
@@ -338,10 +369,11 @@ isPrime = error "TODO: define isPrime"
 -- True
 --
 thousandPrimes :: [Int]
-thousandPrimes = error "TODO: define thousandPrimes"
+thousandPrimes = take 1000 $ filter isPrime [1..]
 
 -- After computing 'thousandPrimes' in GHCi once, compute
 -- it a second time. What do you observe?
+{- It's a whole lot faster :o -}
 
 -- GO TO Tables.hs
 
@@ -375,7 +407,8 @@ tree4 = Node tree2 tree3
 -- [0,1,2,3]
 --
 height :: Tree a -> Int
-height = error "TODO: implement height"
+height (Leaf _) = 0 
+height (Node treeA treeB ) = max (1 + height treeA) (1+ height treeB)
 
 -- Task Datatypes-30.
 --
@@ -390,7 +423,8 @@ height = error "TODO: implement height"
 -- Node (Leaf 3) (Leaf 5)
 --
 mapTree :: (a -> b) -> Tree a -> Tree b
-mapTree = error "TODO: implement mapTree"
+mapTree f (Leaf a) = Leaf $ f a
+mapTree f (Node treeA treeB) = Node (mapTree f treeA) (mapTree f treeB)
 
 -- Task Datatypes-31.
 --
@@ -406,7 +440,10 @@ mapTree = error "TODO: implement mapTree"
 -- True
 --
 sameShape :: Tree a -> Tree b -> Bool
-sameShape = error "TODO: implement sameShape'"
+sameShape (Leaf _) (Leaf _) = True
+sameShape (Leaf _) _ = False
+sameShape _ (Leaf _) = False
+sameShape (Node treeA treeB) (Node treeC treeD) = sameShape treeA treeC && sameShape treeB treeD
 
 -- Task Datatypes-32.
 --
@@ -425,7 +462,7 @@ sameShape = error "TODO: implement sameShape'"
 --   () :: ()
 
 sameShape' :: Tree a -> Tree b -> Bool
-sameShape' = error "TODO: implement sameShape'"
+sameShape' treeA treeB = (mapTree (\x->()) treeA) == (mapTree (\x->()) treeB)
 
 -- Task Datatypes-33.
 --
@@ -444,7 +481,9 @@ sameShape' = error "TODO: implement sameShape'"
 -- Node (Node (Leaf ()) (Leaf ())) (Node (Leaf ()) (Leaf ()))
 --
 buildTree :: Int -> Tree ()
-buildTree = error "TODO: implement buildTree"
+buildTree depth
+    | depth < 1 = Leaf ()
+    | otherwise = Node (buildTree (depth-1)) (buildTree (depth-1))
 
 -- Task Datatypes-34.
 --
@@ -458,7 +497,8 @@ buildTree = error "TODO: implement buildTree"
 -- Node (Leaf 'x') (Node (Leaf 'y') (Leaf 'z'))
 --
 graft :: Tree (Tree a) -> Tree a
-graft = error "TODO: implement graft"
+graft (Leaf (treeA)) = treeA
+graft (Node treeX treeY) = Node (graft treeX) (graft treeY)
 
 -- Task Datatypes-35.
 --
@@ -467,6 +507,8 @@ graft = error "TODO: implement graft"
 
 function :: Tree Int -> Tree ()
 function t = graft (mapTree buildTree t)
+{- This function takes a tree of type Int, maps 'buildTree' on the tree so that each node will hold a its own tree that
+has a depth of the numeric value of the node, and then calls graft to the tree of trees for it to become one large tree -}
 
 -- Task Datatypes-36.
 --
@@ -476,6 +518,7 @@ function t = graft (mapTree buildTree t)
 data Expr =
     Lit Int
   | Add Expr Expr
+  | Mul Expr Expr
   | Neg Expr
   | IfZero Expr Expr Expr
   deriving (Eq, Show)
@@ -487,7 +530,11 @@ expr2 :: Expr
 expr2 = IfZero expr1 (Lit 1) (Lit 0)
 
 eval :: Expr -> Int
-eval = error "TODO: implement eval"
+eval (Lit x) = x
+eval (Add x y) = (eval x) + (eval y)
+eval (Mul x y) = (eval x) * (eval y)
+eval (Neg x) = -(eval x)
+eval (IfZero z x y) = if eval z == 0 then eval x else eval y
 
 prop_eval1 :: Bool
 prop_eval1 = eval expr1 == -8
@@ -506,7 +553,7 @@ prop_eval2 = eval expr2 == 0
 -- Add (Lit 42) (Neg (Lit 2))
 --
 sub :: Expr -> Expr -> Expr
-sub = error "TODO: implement sub"
+sub exp1 exp2 = Add exp1 $ Neg exp2
 
 -- Task Datatypes-38.
 --
@@ -522,7 +569,11 @@ sub = error "TODO: implement sub"
 -- 2
 --
 countOps :: Expr -> Int
-countOps = error "TODO: implement countOps"
+countOps (Lit x) = 0
+countOps (Neg exp) = 1 + countOps exp
+countOps (Add exp1 exp2) = 1 + (countOps exp1) + (countOps exp2)
+countOps (Mul exp1 exp2) = 1 + (countOps exp1) + (countOps exp2)
+countOps (IfZero exp1 exp2 exp3) = 1 + (countOps exp1) + (countOps exp2) + (countOps exp3)
 
 -- Task Datatypes-39.
 --
@@ -539,8 +590,16 @@ countOps = error "TODO: implement countOps"
 -- You do not have to try to minimize the number
 -- of parentheses needed.
 
+prettify :: Expr -> String
+prettify (Lit x) = show x
+prettify (Neg exp) = " - (" ++ (prettify exp) ++ ")"
+prettify (Add exp1 exp2) = (prettify exp1) ++ " + " ++ (prettify exp2)
+prettify (Mul exp1 exp2) = (prettify exp1) ++ " * " ++ (prettify exp2)
+prettify (IfZero exp1 exp2 exp3) = "ifzero" ++ (prettify exp1) ++ " then " ++ (prettify exp2) ++ " else " ++ (prettify exp3)
+
 -- Task Datatypes-40.
 --
 -- Add a constructor 'Mul' for multiplication to
 -- the expression language and adapt all functions
 -- accordingly.
+{- Done! -}

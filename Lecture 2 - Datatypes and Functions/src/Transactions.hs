@@ -1,7 +1,8 @@
 module Transactions where
 
 import Prelude hiding (lookup)
-import Tables
+-- import Tables  {- Commented for the last task (Task Transactions-8) -}
+import Data.Map  {- Uncommented for the last task (Task Transactions-8) -}
 
 -- START HERE AFTER Tables.hs
 
@@ -35,7 +36,7 @@ transaction2 =
   Transaction
     { trAmount = 7
     , trFrom   = "Lars"
-    , trTo     = "Philipp"
+    , trTo     = "Alejandro"
     }
 
 -- Task Transactions-1.
@@ -48,7 +49,7 @@ transaction2 =
 -- Transaction {trAmount = -10, trFrom = "Lars", trTo = "Andres"}
 --
 flipTransaction :: Transaction -> Transaction
-flipTransaction = error "TODO: implement flipTransaction"
+flipTransaction (Transaction amount from to) = Transaction (-amount) to from 
 
 -- Task Transactions-2.
 --
@@ -56,7 +57,10 @@ flipTransaction = error "TODO: implement flipTransaction"
 -- if the transaction amount is negative.
 
 normalizeTransaction :: Transaction -> Transaction
-normalizeTransaction = error "TODO: impement normalizeTransaction"
+normalizeTransaction transaction
+    | amount < 0 = flipTransaction transaction
+    | otherwise = transaction
+    where amount = (\(Transaction a _ _) -> a) transaction
 
 -- Task Transactions-3.
 --
@@ -64,7 +68,8 @@ normalizeTransaction = error "TODO: impement normalizeTransaction"
 -- but use the function 'alter' that you defined in
 -- the Tables tasks.
 
-type Accounts = Table Account Amount
+-- type Accounts = Table Account Amount  {- Commented for the last task (Task Transactions-8) -}
+type Accounts = Map String Int   {- Uncommented for the last task (Task Transactions-8) -}
 
 -- |
 -- >>> let a = processTransaction transaction1 $ insert "Andres" 30 empty
@@ -81,7 +86,13 @@ type Accounts = Table Account Amount
 -- Just 7
 --
 processTransaction :: Transaction -> Accounts -> Accounts
-processTransaction = error "TODO: implement processTransaction"
+processTransaction (Transaction amount debitAcc creditAcc) accounts 
+    | (lookup debitAcc accounts == Nothing) = processTransaction transaction $ insert debitAcc 0 accounts
+    | (lookup creditAcc accounts == Nothing) = processTransaction transaction $ insert creditAcc 0 accounts
+    | otherwise = credit $ debit accounts
+      where transaction = Transaction amount debitAcc creditAcc
+            debit = alter ( >>= (\x -> Just (x-amount))) debitAcc
+            credit = alter ( >>= (\x -> Just (x+amount))) creditAcc
 
 -- Task Transactions-4.
 --
@@ -89,6 +100,7 @@ processTransaction = error "TODO: implement processTransaction"
 -- 'Tables' constructor if you have hidden the 'Tables'
 -- constructor from the export list as requested in the
 -- Tables tasks.
+{- Verified! -}
 
 -- Task Transactions-5.
 --
@@ -104,7 +116,8 @@ processTransaction = error "TODO: implement processTransaction"
 -- Just 7
 --
 processTransactions :: [Transaction] -> Accounts -> Accounts
-processTransactions = error "TODO: implement processTransactions"
+processTransactions [] acc = acc  
+processTransactions (x:xs) acc = processTransactions xs (processTransaction x acc)
 
 -- Task Transactions-6.
 --
@@ -122,11 +135,17 @@ processTransactions = error "TODO: implement processTransactions"
 -- Nothing
 --
 processTransaction' :: Transaction -> Accounts -> Maybe Accounts
-processTransaction' = error "TODO: implement processTransaction'"
+processTransaction' (Transaction amount debitAcc creditAcc) accounts 
+    | debitWallet == Nothing = Nothing
+    | otherwise = if (\(Just w) a -> (w - a) < 0 ) debitWallet amount
+                  then Nothing 
+                  else Just $ processTransaction transaction accounts
+      where transaction = Transaction amount debitAcc creditAcc
+            debitWallet = lookup debitAcc accounts
 
 -- Task Transactions-7.
 --
--- Write a versionof 'processTransactions' that fails
+-- Write a version of 'processTransactions' that fails
 -- if any of the individual transactions fail.
 
 -- |
@@ -142,7 +161,11 @@ processTransaction' = error "TODO: implement processTransaction'"
 -- Nothing
 --
 processTransactions' :: [Transaction] -> Accounts -> Maybe Accounts
-processTransactions' = error "TODO: implement processTransactions'"
+processTransactions' [] acc = Just acc 
+processTransactions' (x:xs) acc
+  | currentTxn == Nothing = Nothing
+  | otherwise = processTransactions' xs $ (\(Just x) -> x) currentTxn
+  where currentTxn = processTransaction' x acc
 
 -- Task Transactions-8.
 --
@@ -150,5 +173,6 @@ processTransactions' = error "TODO: implement processTransactions'"
 -- For this module, switch from using the 'Tables' datatype
 -- to the 'Map' datatype from the 'Data.Map' module, and
 -- verify that everything still works.
+{- Verified! -}
 
 -- GO BACK to Datatypes.hs
