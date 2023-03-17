@@ -1,0 +1,3 @@
+packages: io.cabal
+with-compiler: ghc-8.10.1
+optimization: 2
