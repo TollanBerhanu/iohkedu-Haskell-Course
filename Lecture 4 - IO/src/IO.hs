@@ -7,10 +7,13 @@ module IO where
 import Prelude hiding (readLn)
 import Control.Monad (liftM)
 import Data.Char
-import Data.IP
-import Network       (HostName, PortID)
-import Network.DNS
+-- import Data.IP
+-- import Network       (HostName, PortID)
+-- import Network.DNS
 import System.IO
+-- System.Random
+
+import Text.Read (readMaybe)
 
 -- Task IO-1.
 --
@@ -32,6 +35,7 @@ import System.IO
 
 unsafeReadInt :: String -> Int
 unsafeReadInt = read
+-- unsafeReadInt "12" vs unsafeReadInt "12s"
 
 -- Task IO-2.
 --
@@ -48,7 +52,7 @@ unsafeReadInt = read
 -- Nothing
 --
 readInt :: String -> Maybe Int
-readInt = error "TODO: implement readInt"
+readInt = readMaybe
 
 -- Task IO-3.
 --
@@ -59,7 +63,7 @@ readInt = error "TODO: implement readInt"
 -- Hint: Use 'liftM'.
 
 readLnMaybe :: Read a => IO (Maybe a)
-readLnMaybe = error "TODO: implement readLnMaybe"
+readLnMaybe = liftM readMaybe getLine
 
 -- Task IO-4.
 --
@@ -83,7 +87,12 @@ readLnMaybe = error "TODO: implement readLnMaybe"
 -- remember that strings are lists of characters.
 
 sumTwo :: IO ()
-sumTwo = error "TODO: define sumTwo"
+sumTwo = do 
+          putStrLn "Enter the first number:"
+          num1 :: Int <- readLn
+          putStrLn "Enter the second number:"
+          num2 :: Int <- readLn
+          putStrLn $ "The sum of both numbers is: " ++ show (num1 + num2)
 
 -- Task IO-5.
 --
@@ -92,7 +101,12 @@ sumTwo = error "TODO: define sumTwo"
 -- the results in a list of n elements.
 
 replicateM :: Int -> IO a -> IO [a]
-replicateM = error "TODO: define replicateM"
+replicateM n io
+  | n < 1 = return []
+  | otherwise = do 
+                  result <- io
+                  results <- replicateM (n-1) io
+                  return (result : results)
 
 -- Task IO-6.
 --
@@ -115,8 +129,18 @@ replicateM = error "TODO: define replicateM"
 --
 -- Hint: Try to use suitable IO functions.
 
-sumMany :: IO ()
-sumMany = error "TODO: define sumMany"
+getNumber :: IO Int
+getNumber = do
+              putStrLn "Enter next number:"
+              n <- getLine
+              return $ read n
+
+sumMany :: IO String
+sumMany = do
+            putStrLn "How many numbers do you want to add?"
+            n <- getLine
+            nums <- replicateM (read n) getNumber
+            return $ "The sum of all numbers is: " ++ (show $ sum nums)
 
 -- Task IO-7.
 --
@@ -136,8 +160,17 @@ sumMany = error "TODO: define sumMany"
 -- Hint: You cannot use 'replicateM' for this. But perhaps
 -- you can still find higher-order functions that work?
 
-sumMany' :: IO ()
-sumMany' = error "TODO: define sumMany'"
+getNthNum :: String -> Int -> IO Int
+getNthNum total idx = do
+                        putStrLn $ "Enter number " ++ (show idx) ++ " of " ++  total ++ ":"
+                        n <- getLine
+                        return $ read n
+sumMany' :: IO String
+sumMany' = do
+            putStrLn "How many numbers do you want to add?"
+            n <- getLine
+            nums <- mapM (getNthNum n) [1..(read n)]
+            return $ "The sum of all numbers is: " ++ (show $ sum nums)
 
 -- Task IO-8.
 --
@@ -157,7 +190,13 @@ type Lines = Int
 type Chars = Int
 
 wc :: FilePath -> IO (Words, Lines, Chars)
-wc = error "TODO: define wc"
+wc filePath = do
+        file <- readFile filePath
+        let w = length $ words file
+            l = length $ lines file
+            c = sum $ map length (words file)
+        return (w, l, c)
+-- ghci> wc "./src/file.txt" ... Test the function on this file
 
 -- Task IO-9.
 --
@@ -313,9 +352,9 @@ hGetLines h = do
 --
 -- Then rewrite 'httpTest' to use 'withConnection'.
 
-withConnection :: HostName -> PortID -> (Handle -> IO r) -> IO r
+{- withConnection :: HostName -> PortID -> (Handle -> IO r) -> IO r
 withConnection = error "TODO: implement withConnection"
-
+ -}
 httpTest' :: IO [String]
 httpTest' = error "TODO: implement httpTest'"
 
@@ -335,8 +374,8 @@ httpTest' = error "TODO: implement httpTest'"
 -- for the 'resolvInfo' field of your 'ResolvConf'. Locally, you can
 -- use the default 'ResolvConf'.
 
-googleNameServer :: FileOrNumericHost
+{- googleNameServer :: FileOrNumericHost
 googleNameServer = RCHostName "8.8.8.8"
 
 dnsTest :: IO (Either DNSError [IPv4])
-dnsTest = error "TODO: define dnsTest"
+dnsTest = error "TODO: define dnsTest" -}
